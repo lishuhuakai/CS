@@ -1,0 +1,7 @@
+# ! /bin/sh
+
+make clean
+rm -rf grading/
+make -f /usr/class/cs143/assignments/PA3J/Makefile
+make parser
+pa2-grading.pl

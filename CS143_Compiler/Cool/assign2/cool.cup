@@ -1,0 +1,401 @@
+/*
+ *  cool.cup
+ *              Parser definition for the COOL language.
+ *
+ */
+/* 然后就是编译的事情了！ */
+import java_cup.runtime.*;
+
+/* Stuff enclosed in {: :} is copied verbatim to the class containing
+all parser actions.  All the extra variables/functions you want to use
+in the semantic actions should go here.  Don't remove or modify anything
+that was there initially.  */
+
+action code {:
+
+    /*好吧，应该是这样的！*/
+    int curr_lineno() {
+	return ((CoolTokenLexer)parser.getScanner()).curr_lineno();
+    }
+
+    AbstractSymbol curr_filename() {
+	return ((CoolTokenLexer)parser.getScanner()).curr_filename();
+    }
+:}
+
+/************************************************************************/
+/*                DONT CHANGE ANYTHING IN THIS SECTION                  */
+
+parser code {:
+    int omerrs = 0;
+
+    public void syntax_error(Symbol cur_token) {
+        int lineno = action_obj.curr_lineno();
+	    String filename = action_obj.curr_filename().getString();
+        System.err.print("\"" + filename + "\", line " + lineno +
+		         ": parse error at or near ");
+        Utilities.printToken(cur_token);
+        omerrs++;
+        if (omerrs>50) {
+           System.err.println("More than 50 errors");
+           System.exit(1);
+        }
+    }
+
+    public void unrecovered_syntax_error(Symbol cur_token) {
+    }
+:}
+
+/* Declare the terminals; a few have types for associated lexemes.  The
+token ERROR is never used in the parser; thus, it is a parse error when
+the lexer returns it.  */
+
+terminal CLASS, ELSE, FI, IF, IN, INHERITS, LET, LET_STMT, LOOP, POOL, THEN, WHILE;
+terminal CASE, ESAC, OF, DARROW, NEW, ISVOID;
+terminal ASSIGN, NOT, LE, ERROR;
+terminal PLUS, DIV, MINUS, MULT, EQ, LT, DOT, NEG, COMMA, SEMI, COLON;
+terminal LPAREN, RPAREN, AT, LBRACE, RBRACE;
+terminal AbstractSymbol STR_CONST, INT_CONST;
+terminal Boolean BOOL_CONST;
+terminal AbstractSymbol TYPEID, OBJECTID;
+
+/*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WONT WORK       */
+/**************************************************************************/
+
+   /* Complete the nonterminal list below, giving a type for the semantic
+      value of each non terminal. (See the CUP documentation for details. */
+   /* class_c 终于出现在了这里,好吧，我终于知道了，class_c这个类是如何产生的了！*/
+nonterminal programc program;
+nonterminal Classes class_list;
+nonterminal class_c class;
+nonterminal Features dummy_feature_list;
+nonterminal Feature feature;
+nonterminal attr attribute;
+nonterminal method method; /* 这里出现了重名，我有点担心啊！ */
+nonterminal Formals formal_list;
+nonterminal formalc formal;
+nonterminal Expressions arg_list, expr_list;
+nonterminal Expression expr;
+nonterminal Cases branch_list;
+nonterminal branch branch;
+nonterminal let let_remainder;
+nonterminal assign assign_exp;
+nonterminal block block_exp;
+nonterminal loop while_exp;
+
+/* 优先级的声明放在这里! */
+precedence nonassoc EQ, LT, LE;
+precedence left DOT;
+precedence left PLUS, MINUS;
+precedence left MULT, DIV;
+precedence right NEG, ISVOID;
+
+/* 好吧，这个玩意可以自己消除左递归，提取左公共因子，是不是有点过于强大？ */
+
+/* 规则的话，差不多都写完了，接下来就是完成相对应的动作了！ */
+program
+	::= class_list:cl
+	{:
+		RESULT = new programc(curr_lineno(), cl);
+	:}
+    ;
+
+class_list
+	/* single class */
+	::= class:c
+	{:
+		RESULT = (new Classes(curr_lineno())).appendElement(c);
+	:}
+	/* several classes, 这种文法不是左递归吗？ */
+	| class_list:cl class:c
+	{:
+		RESULT = cl.appendElement(c);
+	:}
+	;
+
+/* If no parent is specified, the class inherits from the Object class */
+class
+	::= CLASS TYPEID:n LBRACE dummy_feature_list:f RBRACE SEMI
+	{:
+	    RESULT = new class_c(curr_lineno(), n,
+		            AbstractTable.idtable.addString("Object"),
+				    f, curr_filename());
+	:}
+	| CLASS TYPEID:n INHERITS TYPEID:p LBRACE dummy_feature_list:f RBRACE SEMI
+	{:
+	    RESULT = new class_c(curr_lineno(), n, p, f, curr_filename());
+	:}
+	| CLASS error SEMI /* 这里也是在做错误恢复啊！ */
+	;
+
+/* Feature list may be empty, but no empty features in list. */
+dummy_feature_list
+	::= dummy_feature_list:dfl feature:f
+	{:
+	    RESULT = dfl.appendElement(f); /* 参数列表！ */
+	:}
+	| /* 也可以为空 */
+	{:
+	    RESULT = new Features(curr_lineno()); /* 构建一个新的Feature！ */
+	:}
+    | feature:f
+    {:
+        RESULT = (new Features(curr_lineno())).appendElement(f);
+    :}
+	;
+
+feature
+    ::= attribute:a
+    {: /* feature的这两个component只是起到了一个中介的作用！ */
+        RESULT = a;
+    :}
+    | method:m
+    {:
+        RESULT = m;
+    :}
+    | error SEMI
+    ;
+
+attribute
+    ::= OBJECTID:obj COLON TYPEID:tp SEMI
+    {: /* 写了这么久，终于写到了属性啦！ */
+        RESULT = new attr(curr_lineno(), obj, tp, new no_expr(curr_lineno()));
+        /* 这里没有用于初始化的exp */
+    :}
+    | OBJECTID:obj COLON TYPEID:tp ASSIGN expr:e SEMI
+    {:
+        RESULT = new attr(curr_lineno(), obj, tp, e);
+    :}
+    | OBJECTID:obj COLON error SEMI
+    ;
+
+method
+    ::= OBJECTID:obj LPAREN formal_list:fm RPAREN COLON TYPEID:tp LBRACE expr:e RBRACE SEMI
+    {:
+        RESULT = new method(curr_lineno(), obj, fm, tp, e);
+    :}
+    ;
+
+formal_list
+    ::= formal_list:fl COMMA formal:f
+    {:
+        RESULT = fl.appendElement(f);
+    :}
+    | /* 也可以为空，因为也可以没有一个参数 */
+    {:
+        RESULT = new Formals(curr_lineno()); /* 构建一个新的列表！ */
+    :}
+    | formal:f
+    {: /* 一个formal也是formal_list */
+        RESULT = (new Formals(curr_lineno())).appendElement(f);
+    :}
+    ;
+
+formal
+    ::= OBJECTID:obj COLON TYPEID:tp
+    {: /* 定义一个formal */
+        RESULT = new formalc(curr_lineno(), obj, tp);
+    :}
+    ;
+
+arg_list
+    ::= expr:e
+    {: /* arg_list可以是一个expr */
+        RESULT = (new Expressions(curr_lineno())).appendElement(e);
+    :}
+    |
+    {: /* 也可以为空 */
+        RESULT = new Expressions(curr_lineno());
+    :}
+    | arg_list:el COMMA expr:e
+    {:
+        RESULT = el.appendElement(e);
+    :}
+    ;
+
+expr_list
+    ::= expr:e SEMI
+    {:
+        RESULT = (new Expressions(curr_lineno())).appendElement(e); /* 添加一个新的元素 */
+    :}
+    | expr_list:el expr:e SEMI
+    {: /* expr_list至少要有一个expr */
+        RESULT = el.appendElement(e);
+    :}
+    | error SEMI
+    ;
+
+expr
+    ::= BOOL_CONST:bc
+    {: /* 这里指的是bool类型的常量！ */
+        RESULT = new bool_const(curr_lineno(), bc);
+    :}
+    | INT_CONST:ic
+    {: /* 这里指的是int类型的常量! */
+        RESULT = new int_const(curr_lineno(), ic);
+    :}
+    | STR_CONST:sc
+    {: /* 这里指的是string啦！ */
+        RESULT = new string_const(curr_lineno(), sc);
+    :}
+    | OBJECTID:obj
+    {: /* 实际上指的是变量名 */
+        RESULT = new object(curr_lineno(), obj);
+    :}
+    | assign_exp:e
+    {: /* 赋值操作 */
+        RESULT = e;
+    :}
+    | expr:e1 DOT OBJECTID:o LPAREN arg_list:al RPAREN
+    {: /* Dispatch操作 */
+        RESULT = new dispatch(curr_lineno(), e1, o, al);
+    :}
+    | expr:e1 AT TYPEID:t DOT OBJECTID:obj LPAREN arg_list:al RPAREN
+    {: /* static_dispatch操作 */
+        RESULT = new static_dispatch(curr_lineno(), e1, t, obj, al);
+    :}
+    | OBJECTID:o LPAREN arg_list:al RPAREN
+    {:
+        RESULT = new dispatch(curr_lineno(),
+	    new object(curr_lineno(), 
+        AbstractTable.idtable.addString("self")), o, al); 
+        /* We should fill self in there! */
+    :}
+    | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
+    {: /* if语句 */
+        RESULT = new cond(curr_lineno(), e1, e2, e3);
+    :}
+    | while_exp:we
+    {: /* while语句 */
+        RESULT = we;
+    :}
+    | block_exp:bl
+    {: /* block语句 */
+        RESULT = bl; /* el是expressions类型 */
+    :}
+    | LET let_remainder:lt
+    {: /* let语句 */
+        RESULT = lt;
+    :}
+    | CASE expr:e OF branch_list:bl ESAC
+    {: /* case语句 */
+        RESULT = new typcase(curr_lineno(), e, bl); /* bl是cases类型 */
+    :}
+    | NEW TYPEID:tp
+    {: /* new语句 */
+        RESULT = new new_(curr_lineno(), tp);
+    :}
+    | ISVOID expr:e
+    {: /* isvoid语句 */
+        RESULT = new isvoid(curr_lineno(), e);
+    :}
+    | expr:e1 PLUS expr:e2
+    {: /* 加法 */
+        RESULT = new plus(curr_lineno(), e1, e2);
+    :}
+    | expr:e1 MINUS expr:e2
+    {: /* 减法 */
+        RESULT = new sub(curr_lineno(), e1, e2);
+    :}
+    | expr:e1 MULT expr:e2
+    {: /* 乘法 */
+        RESULT = new mul(curr_lineno(), e1, e2);
+    :}
+    | expr:e1 DIV expr:e2
+    {: /* 除法 */
+        RESULT = new divide(curr_lineno(), e1, e2);
+    :}
+    | NEG expr:e
+    {: /* 负数 */
+        RESULT = new neg(curr_lineno(), e);
+    :}
+    | expr:e1 LT expr:e2
+    {: /* 小于 */
+        RESULT = new lt(curr_lineno(), e1, e2);
+    :}
+    | expr:e1 LE expr:e2
+    {: /* 小于等于 */
+        RESULT = new leq(curr_lineno(), e1, e2);
+     :}
+    | expr:e1 EQ expr:e2
+    {: /* 等于 */
+        RESULT = new eq(curr_lineno(), e1, e2);
+    :}
+    | NOT expr:e
+    {: /* 取非 */
+        RESULT = new comp(curr_lineno(), e);
+    :}
+    | LPAREN expr:e RPAREN
+    {: /* 括号 */
+        RESULT = e; /* 这里直接去掉括号就可以了！ */
+    :}
+    | error
+    ;
+
+while_exp
+    ::= WHILE expr:e1 LOOP expr:e2 POOL
+    {: /* while语句 */
+        RESULT = new loop(curr_lineno(), e1, e2);
+    :}
+    | WHILE expr:e1 LOOP expr:e2 error
+    | WHILE expr:e1 error expr:e2 POOL
+    ;
+
+block_exp
+    ::= LBRACE expr_list:el RBRACE
+    {: /* block语句 */
+        RESULT = new block(curr_lineno(), el); /* el是expressions类型 */
+    :}
+    | LBRACE error SEMI expr_list RBRACE
+    ;
+
+assign_exp
+    ::= OBJECTID:obj ASSIGN expr:e
+    {:
+        RESULT = new assign(curr_lineno(), obj, e); 
+        /* obj是AbstractSymbol类型，而e是Expression类型！ */
+    :}
+    | OBJECTID:obj ASSIGN error
+    ;
+
+/* let expression */
+let_remainder
+    ::= OBJECTID:obj COLON TYPEID:tp IN expr:e
+    {: /* without initialize! */
+        RESULT = new let(curr_lineno(), obj, tp,
+            new no_expr(curr_lineno()), e); 
+    :}
+    | OBJECTID:obj COLON TYPEID:tp ASSIGN expr:e1 IN expr:e2
+    {: /* with initialize expression! */
+        RESULT = new let(curr_lineno(), obj, tp, e1, e2); 
+    :}
+    | OBJECTID:obj COLON TYPEID:tp COMMA let_remainder:lt
+    {: /* 这个玩意其实玄妙得很,嵌套实在是太厉害了! */
+        RESULT = new let(curr_lineno(), obj, tp, new no_expr(curr_lineno()), lt);
+    :}
+    | OBJECTID:obj COLON TYPEID:tp ASSIGN expr:e COMMA let_remainder:lt
+    {:
+        RESULT = new let(curr_lineno(), obj, tp, e, lt);
+    :}
+    ;
+
+branch_list
+    ::= branch_list:bl branch:b
+    {: /* 这里出现多个分支 */
+        RESULT = bl.appendElement(b);
+    :}
+    | branch:b
+    {: /* 这里是一个分支 */
+        RESULT = (new Cases(curr_lineno())).appendElement(b);
+    :}
+    ;
+
+
+branch
+    ::= OBJECTID:obj COLON TYPEID:tp DARROW expr:e SEMI
+    {: /* 构建一个branch分支 */
+        RESULT = new branch(curr_lineno(), obj, tp, e);
+    :}
+    ;
+
+/* 看见这个玩意,实在是烦得很! */

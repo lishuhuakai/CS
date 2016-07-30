@@ -1,0 +1,2 @@
+#!/bin/sh
+java -classpath /usr/class/cs143/cool/lib:.:`dirname $0` Parser $*
