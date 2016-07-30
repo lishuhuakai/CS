@@ -1,0 +1,2 @@
+#!/bin/sh
+java -classpath /usr/class/cs143/cool/lib:.:/usr/java/lib/rt.jar Cgen $*
