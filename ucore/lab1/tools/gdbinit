@@ -1,0 +1,8 @@
+alias re = "info register"
+
+file bin/kernel
+target remote :1234
+break kern_init
+b *0x7c00
+add-symbol-file obj/bootblock.o 0x7c00
+continue
