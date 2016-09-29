@@ -622,6 +622,7 @@ do_exit(int error_code) {
 //load_icode_read is used by load_icode in LAB8
 static int
 load_icode_read(int fd, void *buf, size_t len, off_t offset) {
+	cprintf("\n==>load_icode_read\n");
     int ret;
     if ((ret = sysfile_seek(fd, offset, LSEEK_SET)) != 0) {
         return ret;
@@ -636,6 +637,7 @@ load_icode_read(int fd, void *buf, size_t len, off_t offset) {
   
 static int
 load_icode(int fd, int argc, char **kargv) {
+	// fd代表文件的描述符
     /* LAB8:EXERCISE2 YOUR CODE  HINT:how to load the file with handler fd  in to process's memory? how to setup argc/argv?
      * MACROs or Functions:
      *  mm_create        - create a mm
@@ -683,7 +685,7 @@ load_icode(int fd, int argc, char **kargv) {
     struct Page *page;
 
     struct elfhdr __elf, *elf = &__elf;
-    if ((ret = load_icode_read(fd, elf, sizeof(struct elfhdr), 0)) != 0) {
+    if ((ret = load_icode_read(fd, elf, sizeof(struct elfhdr), 0)) != 0) { // 首先是从磁盘中加载一个elf头部到elf结构中
         goto bad_elf_cleanup_pgdir;
     }
 
@@ -698,7 +700,7 @@ load_icode(int fd, int argc, char **kargv) {
     uint32_t vm_flags, perm, phnum;
     for (phnum = 0; phnum < elf->e_phnum; phnum ++) {
         off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
-        if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) {
+        if ((ret = load_icode_read(fd, ph, sizeof(struct proghdr), phoff)) != 0) { // 然后是从磁盘中加载一个proghdr到ph中
             goto bad_cleanup_mmap;
         }
         if (ph->p_type != ELF_PT_LOAD) { // 只需要找到能够加载的segment
@@ -750,7 +752,7 @@ load_icode(int fd, int argc, char **kargv) {
                 size -= la - end; //获得实际要拷贝的大小
             }
 			// 为了将代码拷贝到正确的位置，所以要添加上这个off,继续上面的page2kva(page)返回0x800000,肯定要加上0x20才行
-            if ((ret = load_icode_read(fd, page2kva(page) + off, size, offset)) != 0) {
+            if ((ret = load_icode_read(fd, page2kva(page) + off, size, offset)) != 0) { // 继续从磁盘上面读文件
                 goto bad_cleanup_mmap;
             }
             start += size, offset += size;
@@ -805,19 +807,20 @@ load_icode(int fd, int argc, char **kargv) {
     current->cr3 = PADDR(mm->pgdir); // 好吧，将来这个玩意是要写入cr3寄存器的
     lcr3(PADDR(mm->pgdir)); // 好吧，直接就加载了,更新了用户进程的虚拟内存空间
 
-    //setup argc, argv
-    uint32_t argv_size=0, i;
+    // setup argc, argv
+	// 开始准备argc,以及argv
+    uint32_t argv_size = 0, i;
     for (i = 0; i < argc; i ++) {
-        argv_size += strnlen(kargv[i],EXEC_MAX_ARG_LEN + 1)+1;
+        argv_size += strnlen(kargv[i], EXEC_MAX_ARG_LEN + 1) + 1;
     }
 
-    uintptr_t stacktop = USTACKTOP - (argv_size/sizeof(long)+1)*sizeof(long);
-    char** uargv=(char **)(stacktop  - argc * sizeof(char *));
+    uintptr_t stacktop = USTACKTOP - (argv_size / sizeof(long) + 1) * sizeof(long);
+    char** uargv=(char **)(stacktop  - argc * sizeof(char *)); // 这些东西都要拷贝到栈里面去
     
     argv_size = 0;
     for (i = 0; i < argc; i ++) {
         uargv[i] = strcpy((char *)(stacktop + argv_size ), kargv[i]);
-        argv_size +=  strnlen(kargv[i],EXEC_MAX_ARG_LEN + 1)+1;
+        argv_size +=  strnlen(kargv[i],EXEC_MAX_ARG_LEN + 1) + 1;
     }
     
     stacktop = (uintptr_t)uargv - sizeof(int);
@@ -882,6 +885,7 @@ failed_cleanup:
 // 这里应该是整个实验中最关键的一个部分
 int
 do_execve(const char *name, int argc, const char **argv) {
+	cprintf("\n==>do_execve\n");
     static_assert(EXEC_MAX_ARG_LEN >= FS_MAX_FPATH_LEN);
     struct mm_struct *mm = current->mm;
     if (!(argc >= 1 && argc <= EXEC_MAX_ARG_NUM)) {
@@ -916,7 +920,7 @@ do_execve(const char *name, int argc, const char **argv) {
 
     /* sysfile_open will check the first argument path, thus we have to use a user-space pointer, and argv[0] may be incorrect */    
     int fd;
-    if ((ret = fd = sysfile_open(path, O_RDONLY)) < 0) {
+    if ((ret = fd = sysfile_open(path, O_RDONLY)) < 0) { // 首先是打开文件
         goto execve_exit;
     }
     if (mm != NULL) {
@@ -1101,7 +1105,7 @@ init_main(void *arg) {
     if (pid <= 0) {
         panic("create user_main failed.\n");
     }
- extern void check_sync(void);
+	extern void check_sync(void);
     //check_sync();                // check philosopher sync problem
 
     while (do_wait(0, NULL) == 0) { // 等待子进程退出

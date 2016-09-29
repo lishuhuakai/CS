@@ -74,7 +74,7 @@ get_device(char *path, char **subpath, struct inode **node_store) {
 /*
  * vfs_lookup - get the inode according to the path filename
  */
-// 根据路径的文件名，得到
+// 根据路径的文件名，得到对应的inode
 int
 vfs_lookup(char *path, struct inode **node_store) {
 	cprintf("\n==>vfs_lookup\n");
@@ -83,10 +83,15 @@ vfs_lookup(char *path, struct inode **node_store) {
     struct inode *node;
     if ((ret = get_device(path, &path, &node)) != 0) { // node用于记录path对应的设备的inode信息,这里的path可能会被改变
 		// 举个例子如果path = "/test/text.c" ,调用之后 path = "test/text.c"
+		// 但是在ucore中，由于文件最多只有一层，所以做了一点简化，不可能出现/test/text.c这种情况，只有/test.c这种情况
+		// 当然，你可以扩展ucore的文件系统
         return ret;
     }
 	cprintf("path = %s\n", path);
     if (*path != '\0') {
+		// node表示文件夹类型的文件对应的inode
+		// path在ucore中代表在node指代的这个文件夹下面的一个文件的文件名
+		// node_store用于存储宏vop_lookup返回的path文件对应的inode节点
         ret = vop_lookup(node, path, node_store); // 调用lookup函数的时候会将文件的信息加载到node_store中去
         vop_ref_dec(node);
         return ret;
@@ -99,6 +104,8 @@ vfs_lookup(char *path, struct inode **node_store) {
  * vfs_lookup_parent - Name-to-vnode translation.
  *  (In BSD, both of these are subsumed by namei().)
  */
+// 用于查找父节点
+// 貌似在ucore中只有一个，那就是'/'对应的inode
 int
 vfs_lookup_parent(char *path, struct inode **node_store, char **endp){
     int ret;

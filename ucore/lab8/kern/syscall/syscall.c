@@ -33,6 +33,7 @@ sys_wait(uint32_t arg[]) {
 
 static int
 sys_exec(uint32_t arg[]) {
+	cprintf("\n==>sys_exec\n");
     const char *name = (const char *)arg[0];
     int argc = (int)arg[1];
     const char **argv = (const char **)arg[2];

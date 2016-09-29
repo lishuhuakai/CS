@@ -9,12 +9,13 @@
 
 // open file in vfs, get/create inode for file with filename path.
 // vfs -- visual file system
+// 给定一个path，在vfs中打开文件
 int
 vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
 	cprintf("\n==>vfs_open\n");
 	cprintf("path = %s\n", path);
     bool can_write = 0;
-    switch (open_flags & O_ACCMODE) { // 这里是构架一个inode结构是吧！
+    switch (open_flags & O_ACCMODE) { // 检测打开标志
     case O_RDONLY:
         break;
     case O_WRONLY:
@@ -35,9 +36,9 @@ vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
     struct inode *node;
     bool excl = (open_flags & O_EXCL) != 0;
     bool create = (open_flags & O_CREAT) != 0;
-    ret = vfs_lookup(path, &node);
+    ret = vfs_lookup(path, &node); // 根据path，得到对应文件的inode信息，记录在node之中
 
-    if (ret != 0) { // 出现了错误
+    if (ret != 0) { // 如果ret != 0,表示出现了错误
         if (ret == -16 && (create)) {
             char *name;
             struct inode *dir;
@@ -50,8 +51,10 @@ vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
         return -E_EXISTS;
     }
     assert(node != NULL);
-    
-    if ((ret = vop_open(node, open_flags)) != 0) {
+	// vop_open函数这个宏实际上调用的是node的in_ops域中对应的函数,
+	// 如果node代表普通文件，在ucore中实际调用sfs_openfile函数，什么事情也没干
+	// 如果node代表文件夹，则实际调用sfs_opendir,它只是对打开参数做了一些检测
+    if ((ret = vop_open(node, open_flags)) != 0) { 
         vop_ref_dec(node);
         return ret;
     }
@@ -69,6 +72,7 @@ vfs_open(char *path, uint32_t open_flags, struct inode **node_store) {
 }
 
 // close file in vfs
+// 在vfs中关闭文件
 int
 vfs_close(struct inode *node) {
     vop_open_dec(node);
