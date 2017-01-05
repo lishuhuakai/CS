@@ -39,12 +39,12 @@ namespace muduo
 
 		void notify()
 		{
-			MCHECK(pthread_cond_signal(&pcond_)); // 唤醒一个进程
+			MCHECK(pthread_cond_signal(&pcond_)); // 唤醒一个线程
 		}
 
 		void notifyAll()
 		{
-			MCHECK(pthread_cond_broadcast(&pcond_)); // 唤醒多个进程
+			MCHECK(pthread_cond_broadcast(&pcond_)); // 唤醒多个线程
 		}
 
 	private:
