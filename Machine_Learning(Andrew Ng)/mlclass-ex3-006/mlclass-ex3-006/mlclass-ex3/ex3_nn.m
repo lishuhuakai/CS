@@ -1,5 +1,6 @@
 %% Machine Learning Online Class - Exercise 3 | Part 2: Neural Networks
 
+% 好吧,不管怎么说,总算是到了神经网络这一节了.
 %  Instructions
 %  ------------
 % 
@@ -25,6 +26,9 @@ hidden_layer_size = 25;   % 25 hidden units
 num_labels = 10;          % 10 labels, from 1 to 10   
                           % (note that we have mapped "0" to label 10)
 
+                          % 输入层有400个
+                          % 为什么隐藏层只有25个
+                          % 输出层有10个
 %% =========== Part 1: Loading and Visualizing Data =============
 %  We start the exercise by first loading and visualizing the dataset. 
 %  You will be working with a dataset that contains handwritten digits.
@@ -52,7 +56,7 @@ pause;
 fprintf('\nLoading Saved Neural Network Parameters ...\n')
 
 % Load the weights into variables Theta1 and Theta2
-load('ex3weights.mat');
+load('ex3weights.mat'); % 好吧,这些玩意已经训练好了是吧.
 
 %% ================= Part 3: Implement Predict =================
 %  After training the neural network, we would like to use it to predict
@@ -60,7 +64,7 @@ load('ex3weights.mat');
 %  neural network to predict the labels of the training set. This lets
 %  you compute the training set accuracy.
 
-pred = predict(Theta1, Theta2, X);
+pred = predict(Theta1, Theta2, X); % 然后开始预测
 
 fprintf('\nTraining Set Accuracy: %f\n', mean(double(pred == y)) * 100);
 

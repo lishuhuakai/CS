@@ -36,8 +36,8 @@ load('ex3data1.mat'); % training data stored in arrays X, y
 m = size(X, 1);
 
 % Randomly select 100 data points to display
-rand_indices = randperm(m);
-sel = X(rand_indices(1:100), :);
+rand_indices = randperm(m); % 这里应该是随机选取5000个数
+sel = X(rand_indices(1:100), :); % 随机选取100行
 
 displayData(sel);
 
