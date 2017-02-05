@@ -31,7 +31,7 @@ fprintf('Loading and Visualizing Data ...\n')
 % You will have X, y, Xval, yval, Xtest, ytest in your environment
 load ('ex5data1.mat');
 
-% m = Number of examples
+% m = Number of examples 训练集的数目
 m = size(X, 1);
 
 % Plot training data
@@ -164,7 +164,7 @@ pause;
 %  lambda to see how the fit and learning curve change.
 %
 
-lambda = 0;
+lambda = 0; % 多项式回归的学习曲线
 [theta] = trainLinearReg(X_poly, y, lambda);
 
 % Plot training data and fit

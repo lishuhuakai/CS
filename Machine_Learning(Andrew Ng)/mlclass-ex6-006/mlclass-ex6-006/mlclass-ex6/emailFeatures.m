@@ -48,7 +48,12 @@ x = zeros(n, 1);
 %
 %
 
-
+k = legth(word_indices);
+for i = 1:k
+    if (x(word_indices(i)) == 0)
+        x(word_indices(i)) = x(word_indices(i)) + 1;
+    end
+end
 
 
 

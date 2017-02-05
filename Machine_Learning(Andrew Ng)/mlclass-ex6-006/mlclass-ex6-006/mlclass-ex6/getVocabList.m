@@ -9,11 +9,12 @@ function vocabList = getVocabList()
 fid = fopen('vocab.txt');
 
 % Store all dictionary words in cell array vocab{}
-n = 1899;  % Total number of words in the dictionary
+n = 1899;  % 字典里面所拥有的词语的数目
 
 % For ease of implementation, we use a struct to map the strings => integers
 % In practice, you'll want to use some form of hashmap
-vocabList = cell(n, 1);
+% 为了实现起来更加方便,我们构建一个映射,从strings映射到int类型的数.
+vocabList = cell(n, 1); % n代表词语的数目
 for i = 1:n
     % Word Index (can ignore since it will be = i)
     fscanf(fid, '%d', 1);

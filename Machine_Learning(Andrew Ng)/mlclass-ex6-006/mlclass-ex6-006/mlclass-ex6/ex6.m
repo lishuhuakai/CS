@@ -25,14 +25,14 @@ clear ; close all; clc
 %  the data.
 %
 
-fprintf('Loading and Visualizing Data ...\n')
+fprintf('Loading and Visualizing Data ...\n') % 加载以及可视化数据
 
 % Load from ex6data1: 
 % You will have X, y in your environment
-load('ex6data1.mat');
+load('ex6data1.mat'); % 加载数据
 
 % Plot training data
-plotData(X, y);
+plotData(X, y); % 然后是绘制数据
 
 fprintf('Program paused. Press enter to continue.\n');
 pause;
@@ -46,11 +46,11 @@ pause;
 % You will have X, y in your environment
 load('ex6data1.mat');
 
-fprintf('\nTraining Linear SVM ...\n')
+fprintf('\nTraining Linear SVM ...\n') % 接下来是训练svm
 
 % You should try to change the C value below and see how the decision
 % boundary varies (e.g., try C = 1000)
-C = 1;
+C = 0.1;
 model = svmTrain(X, y, C, @linearKernel, 1e-3, 20);
 visualizeBoundaryLinear(X, y, model);
 
@@ -77,14 +77,14 @@ pause;
 %  plot the data. 
 %
 
-fprintf('Loading and Visualizing Data ...\n')
+fprintf('Loading and Visualizing Data ...\n') % 可视化数据
 
 % Load from ex6data2: 
 % You will have X, y in your environment
-load('ex6data2.mat');
+load('ex6data2.mat'); % 加载数据
 
 % Plot training data
-plotData(X, y);
+plotData(X, y); % 然后绘制数据
 
 fprintf('Program paused. Press enter to continue.\n');
 pause;

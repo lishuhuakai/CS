@@ -32,14 +32,14 @@ num_labels = 10;          % 10 labels, from 1 to 10
 % Load Training Data
 fprintf('Loading and Visualizing Data ...\n')
 
-load('ex4data1.mat');
-m = size(X, 1);
+load('ex4data1.mat'); % 加载矩阵么.一共有5000个训练集,每个训练集有400个特征
+m = size(X, 1); % 训练集的数目
 
 % Randomly select 100 data points to display
-sel = randperm(size(X, 1));
-sel = sel(1:100);
+sel = randperm(size(X, 1)); % randperm函数获取从1~m中的一个随机顺序
+sel = sel(1:100); % 也就是随机获取100行啦.
 
-displayData(X(sel, :));
+displayData(X(sel, :)); % 好吧,这里是用于展示数据啦.
 
 fprintf('Program paused. Press enter to continue.\n');
 pause;
@@ -52,7 +52,7 @@ pause;
 fprintf('\nLoading Saved Neural Network Parameters ...\n')
 
 % Load the weights into variables Theta1 and Theta2
-load('ex4weights.mat');
+load('ex4weights.mat'); % 加载权重这玩意
 
 % Unroll parameters 
 nn_params = [Theta1(:) ; Theta2(:)];

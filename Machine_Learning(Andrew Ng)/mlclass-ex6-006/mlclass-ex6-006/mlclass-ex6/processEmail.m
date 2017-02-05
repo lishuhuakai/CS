@@ -6,7 +6,9 @@ function word_indices = processEmail(email_contents)
 %   words contained in the email. 
 %
 
-% Load Vocabulary
+% 传入的email_contents表示邮件的内容.
+
+% 加载词汇
 vocabList = getVocabList();
 
 % Init return value
@@ -51,7 +53,7 @@ email_contents = regexprep(email_contents, '[$]+', 'dollar');
 % Output the email to screen as well
 fprintf('\n==== Processed Email ====\n\n');
 
-% Process file
+% 接下来开始解析文件啦.
 l = 0;
 
 while ~isempty(email_contents)
@@ -96,7 +98,12 @@ while ~isempty(email_contents)
     % Note: You can use strcmp(str1, str2) to compare two strings (str1 and
     %       str2). It will return 1 only if the two strings are equivalent.
     %
-
+    vocab_length = length(vocabList);
+    for i = 1:vocab_length,
+        if (strcmp(str, vocabList(i) == 1)
+            word_indices = [word_indices; i];
+        end
+    end
 
 
 

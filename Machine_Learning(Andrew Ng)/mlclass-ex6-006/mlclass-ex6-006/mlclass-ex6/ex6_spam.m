@@ -26,11 +26,11 @@ clear ; close all; clc
 %  complete the code in processEmail.m to produce a word indices vector
 %  for a given email.
 
-fprintf('\nPreprocessing sample email (emailSample1.txt)\n');
+fprintf('\nPreprocessing sample email (emailSample1.txt)\n'); % 首先是邮件的预处理过程
 
-% Extract Features
+% Extract Features, 抽取出feature
 file_contents = readFile('emailSample1.txt');
-word_indices  = processEmail(file_contents);
+word_indices  = processEmail(file_contents); % 对内容进行一定程度的处理.
 
 % Print Stats
 fprintf('Word Indices: \n');
@@ -47,7 +47,7 @@ pause;
 
 fprintf('\nExtracting features from sample email (emailSample1.txt)\n');
 
-% Extract Features
+% 抽取特征
 file_contents = readFile('emailSample1.txt');
 word_indices  = processEmail(file_contents);
 features      = emailFeatures(word_indices);

@@ -1,37 +1,20 @@
 function [J, grad] = linearRegCostFunction(X, y, theta, lambda)
-%LINEARREGCOSTFUNCTION Compute cost and gradient for regularized linear 
-%regression with multiple variables
-%   [J, grad] = LINEARREGCOSTFUNCTION(X, y, theta, lambda) computes the 
-%   cost of using theta as the parameter for linear regression to fit the 
-%   data points in X and y. Returns the cost in J and the gradient in grad
 
-% Initialize some useful values
-m = length(y); % number of training examples
+m = length(y); % 训练集的数目
 
-% You need to return the following variables correctly 
-J = 0;
+% 下面是需要计算的量
+J = 0; % 这里算是事先分配内存
 grad = zeros(size(theta));
 
-% ====================== YOUR CODE HERE ======================
-% Instructions: Compute the cost and gradient of regularized linear 
-%               regression for a particular choice of theta.
-%
-%               You should set J to the cost and grad to the gradient.
-%
+% X是一个12 * 2的矩阵,而theta是一个2*1类型的矩阵.
+h = X * theta; % 得到的结果,是吧.
 
+J = (1 / (2 * m)) * sum((h - y).^2) + (lambda/(2 * m)) *(sum(theta.^2) - theta(1)^2);
 
+% J已经计算出来了,然后需要干的事情就是计算梯度了.
+grad = (X' * (h - y))/ m + (lambda / m) * theta; % 然后就开始了.
+grad(1) = grad(1) - lambda / m * theta(1);
 
-
-
-
-
-
-
-
-
-
-% =========================================================================
-
-grad = grad(:);
+grad = grad(:); % 展开
 
 end

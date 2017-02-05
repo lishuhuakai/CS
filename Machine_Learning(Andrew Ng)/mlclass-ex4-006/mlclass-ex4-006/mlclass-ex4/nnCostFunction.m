@@ -3,6 +3,7 @@ function [J grad] = nnCostFunction(nn_params, ...
                                    hidden_layer_size, ...
                                    num_labels, ...
                                    X, y, lambda)
+%好吧,终于轮到我开始写代价函数了.还要开始计算梯度了.
 %NNCOSTFUNCTION Implements the neural network cost function for a two layer
 %neural network which performs classification
 %   [J grad] = NNCOSTFUNCTON(nn_params, hidden_layer_size, num_labels, ...
@@ -61,6 +62,55 @@ Theta2_grad = zeros(size(Theta2));
 %               the regularization separately and then add them to Theta1_grad
 %               and Theta2_grad from Part 2.
 %
+
+% 好吧,貌似这个计算过程非常复杂.
+% 首先要进行前向传播,计算预测的结果
+a1 = [ones(m, 1) X]; % m * (n + 1)
+% 第一层的输入是n + 1个数据
+z2 = a1 * Theta1'; % 得到第二层的数据, 在这里z2是一个5000 * 25类型的矩阵
+a2 = [ones(m, 1) sigmoid(z2)]; % a2是一个5000 *　26类型的矩阵,第一列全是bias unit
+z3 = a2 * Theta2';
+a3 = sigmoid(z3); % 这个玩意是预测的结果
+
+% 现在要开始计算J了
+for i = 1:m
+    h = a3(i, :)';
+    J = J + sum(log(1 - h)) + log(h(y(i, :))) - log(1 - h(y(i, :)));
+end
+
+J = 1/m * J;
+ 
+squareTheta1 = Theta1.^2;
+squareTheta1(:, 1) = 0;
+squareTheta2 = Theta2.^2;
+squareTheta2(:, 1) = 0;
+ 
+J = J + lambda/(2 * m) * (sum(sum(squareTheta1)) + sum(sum(squareTheta2)));
+ 
+
+% 下面要开始反向神经网络的计算而来
+
+delta3 = zeros(num_labels, 1); % delta3是一个10 * 1的矩阵
+% 反向传播,输出层的误差
+delta2 = zeros(size(Theta1)); % delta2是一个25 * 401型的矩阵
+% 反向传播,隐藏层的误差
+
+ 
+
+delta3 = a3; % 现在delta3是一个5000 * 10类型的矩阵
+% 现在要减去1啦
+for i = 1:m
+    delta3(i, y(i)) = delta3(i, y(i)) - 1;
+end
+% delta3现在计算好了,现在我们要计算delta2
+
+delta2 = Theta2' * delta3 .* [1; sigmoidGradient(z2)];
+
+
+   
+
+
+    
 
 
 
